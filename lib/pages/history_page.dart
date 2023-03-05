@@ -1,7 +1,7 @@
 import 'package:codigo6_qr/db/db_admin.dart';
 import 'package:codigo6_qr/models/qr_model.dart';
+import 'package:codigo6_qr/ui/widgets/item_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
@@ -10,140 +10,94 @@ class HistoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                const Text(
-                  "Historial general",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22.0,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(
-                  height: 12.0,
-                ),
-                const Text(
-                  "Listado general de tus QR registrados.",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                FutureBuilder(
-                  future: DBAdmin().getQRList(),
-                  builder: (BuildContext context, AsyncSnapshot snap) {
-                    if (snap.hasData) {
-                      List<QRModel> qrList = snap.data;
-                      return ListView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemCount: qrList.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          //Validar si es o no un url
-
-                          // bool isUrl = false;
-                          // if (qrList[index].url.contains("http")) {
-                          //   isUrl = true;
-                          // }
-
-                          bool isUrl = qrList[index].url.contains("http");
-
-                          return Container(
-                            margin: const EdgeInsets.symmetric(vertical: 10.0),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12.0,
-                              vertical: 14.0,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.09),
-                              borderRadius: BorderRadius.circular(14.0),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.calendar_month,
-                                            size: 14.0,
-                                            color: Colors.white54,
-                                          ),
-                                          Text(
-                                            " ${qrList[index].datetime}",
-                                            style: const TextStyle(
-                                              color: Colors.white54,
-                                              fontSize: 14.0,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(
-                                        height: 3,
-                                      ),
-                                      Text(
-                                        qrList[index].title,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16.0,
-                                        ),
-                                      ),
-                                      const SizedBox(
-                                        height: 3,
-                                      ),
-                                      Text(
-                                        qrList[index].observation,
-                                        style: const TextStyle(
-                                          color: Colors.white54,
-                                          fontSize: 14.0,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                isUrl
-                                    ? IconButton(
-                                        onPressed: () {
-                                          Uri uri =
-                                              Uri.parse(qrList[index].url);
-                                          launchUrl(uri,
-                                              mode: LaunchMode
-                                                  .externalApplication);
-                                        },
-                                        icon: const Icon(
-                                          Icons.link,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const SizedBox(),
-                                IconButton(
-                                  onPressed: () {},
-                                  icon: const Icon(
-                                    Icons.qr_code,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    }
-                    return const CircularProgressIndicator();
-                  },
-                ),
-              ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 20.0),
+            const Text(
+              "Historial general",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22.0,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
+            const SizedBox(height: 10.0),
+            const Text(
+              "Listado general de tus QR registrados.",
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16.0,
+                fontWeight: FontWeight.w400,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20.0),
+            Expanded(
+              child: _buildFutureBuilder(),
+            )
+          ],
         ),
+      ),
+    );
+  }
+
+  _buildFutureBuilder() {
+    return FutureBuilder(
+      future: DBAdmin().getQRList(),
+      builder: (BuildContext context, AsyncSnapshot snap) {
+        if (snap.hasData) {
+          List<QRModel> qrList = snap.data;
+          return qrList.isEmpty ? _buildEmptyList() : _buildList(qrList);
+        }
+        return _buildWhiteLoader();
+      },
+    );
+  }
+
+  _buildWhiteLoader() {
+    return const Center(
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(
+          Colors.white,
+        ),
+      ),
+    );
+  }
+
+  _buildEmptyList() {
+    return const Center(
+      child: Text(
+        "No tienes QR Registrados",
+        style: TextStyle(
+          color: Colors.white54,
+          fontSize: 14.0,
+        ),
+      ),
+    );
+  }
+
+  _buildList(List<QRModel> qrList) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          ListView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            itemCount: qrList.length,
+            itemBuilder: (BuildContext context, int index) {
+              QRModel item = qrList[index];
+              bool isUrl = qrList[index].url.contains("http");
+
+              return ItemWidget(
+                item: item,
+                isUrl: isUrl,
+              );
+            },
+          ),
+        ],
       ),
     );
   }
